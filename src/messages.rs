@@ -69,7 +69,7 @@ impl CommandType {
     /// Converts data to be transmitted into the form expected by VESC.
     fn pack_payload_data(self, payload: f32) -> u64 {
         match self {
-            CommandType::TEST => (payload as f32 * 0x100000 as f32) as u64,
+            CommandType::TEST => (payload as f32 * 0x1000 as f32) as u64,
         }
     }
 }
