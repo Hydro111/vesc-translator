@@ -1,18 +1,14 @@
 // Traits
 
-pub trait VESCSendable {
+pub trait VescSendable {
 	// TODO - convert to binary or binary CAN signal
 	/// Converts the object to a binary representation so it can be sent easier.
 	fn to_header_binary(&self) -> Vec<u8>;
 	fn to_body_binary(&self) -> Vec<u8>;
 }
 
-pub trait CANSendable {
+pub trait CanBusSendable {
 	fn to_can_binary(&self) -> Vec<u8>;
-}
-
-pub trait ByteConvertable {
-	fn as_bytes(self) -> Vec<u8>;
 }
 
 
@@ -20,6 +16,7 @@ pub trait ByteConvertable {
 
 // Message Struct
 
+#[derive(Clone, Copy)]
 pub struct Message {
 	command: CommandType,
 	target: u8,
@@ -32,15 +29,15 @@ pub struct Message {
 			payload
 		}
 	}
-} impl VESCSendable for Message {
+} impl VescSendable for Message {
 
 	fn to_header_binary(&self) -> Vec<u8> {
 		// target is stored in the lower byte, the rest of the space is used for the command
-		((self.target as u32 ) | ((self.command as u32) << 8)).as_bytes() 
+		((self.target as u32 ) | ((self.command as u32) << 8)).to_ne_bytes().to_vec()
 	}
 
 	fn to_body_binary(&self) -> Vec<u8> {
-		self.command.pack_payload_data(self.payload).as_bytes()
+		self.command.pack_payload_data(self.payload).to_ne_bytes().to_vec()
 	}
 }
 
@@ -48,40 +45,14 @@ pub struct Message {
 
 // Helpers and simple impls
 
-impl<T: VESCSendable> CANSendable for T {
+impl<T: VescSendable> CanBusSendable for T {
 	fn to_can_binary(&self) -> Vec<u8> {
 		let mut out: Vec<u8> = vec![];
 
 		out.extend(self.to_header_binary());
 		out.extend(self.to_body_binary());
-
+		todo!(); // Needs to include other CAN information in proper format
 		out
-	}
-}
-
-impl ByteConvertable for u32 {
-	fn as_bytes(self) -> Vec<u8> {
-		vec![
-			(self >> 0)  as u8,
-			(self >> 8)  as u8,
-			(self >> 16) as u8,
-			(self >> 24) as u8,
-		]
-	}
-}
-
-impl ByteConvertable for u64 {
-	fn as_bytes(self) -> Vec<u8> {
-		vec![
-			(self >> 0)  as u8,
-			(self >> 8)  as u8,
-			(self >> 16) as u8,
-			(self >> 24) as u8,
-			(self >> 32)  as u8,
-			(self >> 40)  as u8,
-			(self >> 48) as u8,
-			(self >> 56) as u8,
-		]
 	}
 }
 
@@ -89,7 +60,7 @@ impl ByteConvertable for u64 {
 // Command type enum
 
 #[derive(Clone, Copy)]
-pub enum CommandType {
+pub enum CommandType { // Numeric value is the command id in VESC
 	TEST = 0
 } impl CommandType {
 	/// Converts data to be transmitted into the form expected by VESC.
