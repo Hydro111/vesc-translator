@@ -59,6 +59,7 @@ impl<T: VescSendable> CanBusSendable for T {
 
 // Command type enum
 #[derive(Clone, Copy)]
+#[repr(u32)]
 pub enum CommandType {
     // Numeric value is the command id in VESC.
 	// These will be cast to 3 bytes, so these will all be lower than 16,777,216
