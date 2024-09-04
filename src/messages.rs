@@ -1,10 +1,18 @@
-
 // Traits
-pub trait VescSendable {
+pub trait VescSendable: VescSendableExtending + VescSendableValue {}
+impl<T> VescSendable for T where T: VescSendable + VescSendableExtending {}
+// Above technique from https://stackoverflow.com/questions/26983355/is-there-a-way-to-combine-multiple-traits-in-order-to-define-a-new-trait
+
+pub trait VescSendableValue {
     // TODO - convert to binary or binary CAN signal
     /// Converts the object to a binary representation so it can be sent easier.
     fn to_header_binary(&self) -> Vec<u8>;
     fn to_body_binary(&self) -> Vec<u8>;
+}
+
+pub trait VescSendableExtending {
+    fn extend_header_binary(&self, out: &mut Vec<u8>);
+    fn extend_body_binary(&self, out: &mut Vec<u8>);
 }
 
 pub trait CanBusSendable {
@@ -27,22 +35,16 @@ impl Message {
         };
     }
 }
-impl VescSendable for Message {
-    fn to_header_binary(&self) -> Vec<u8> {
+impl VescSendableExtending for Message {
+    fn extend_header_binary(&self, out: &mut Vec<u8>) {
         // target is stored in the lower byte, the rest of the space is used for the command
-        ((self.target as u32) | ((self.command as u32) << 8))
-            .to_ne_bytes()
-            .to_vec()
+        out.extend(((self.target as u32) | ((self.command as u32) << 8)).to_ne_bytes());
     }
 
-    fn to_body_binary(&self) -> Vec<u8> {
-        self.command
-            .pack_payload_data(self.payload)
-            .to_ne_bytes()
-            .to_vec()
+    fn extend_body_binary(&self, out: &mut Vec<u8>) {
+        out.extend(self.command.pack_payload_data(self.payload).to_ne_bytes());
     }
 }
-
 
 // Helpers and simple impls
 impl<T: VescSendable> CanBusSendable for T {
@@ -52,17 +54,28 @@ impl<T: VescSendable> CanBusSendable for T {
         out.extend(self.to_header_binary());
         out.extend(self.to_body_binary());
         todo!(); // Needs to include other CAN information in proper format
-        out
     }
 }
 
+impl<T: VescSendableExtending> VescSendableValue for T {
+    fn to_header_binary(&self) -> Vec<u8> {
+        let mut out = vec![];
+        self.extend_header_binary(&mut out);
+        out
+    }
+    fn to_body_binary(&self) -> Vec<u8> {
+        let mut out = vec![];
+        self.extend_body_binary(&mut out);
+        out
+    }
+}
 
 // Command type enum
 #[derive(Clone, Copy)]
 #[repr(u32)]
 pub enum CommandType {
     // Numeric value is the command id in VESC.
-	// These will be cast to 3 bytes, so these will all be lower than 16,777,216
+    // These will be cast to 3 bytes, so these will all be lower than 16,777,216
     TEST = 0,
 }
 impl CommandType {
