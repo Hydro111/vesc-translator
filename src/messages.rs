@@ -67,14 +67,14 @@ pub enum CommandType {
     // Numeric value is the command id in VESC.
     // These will be cast to 3 bytes, so these will all be lower than 16,777,216
     SetDutyCycle = 0x0_u32,
-    SetRpm = 0x3_u32
+    SetRpm = 0x3_u32,
 }
 impl CommandType {
     /// Converts data to be transmitted into the form expected by VESC.
     fn pack_payload_data(self, payload: f32) -> u64 {
         match self {
             CommandType::SetDutyCycle => (payload * 100_000_f32) as u64,
-            CommandType::SetRpm => payload as u64
+            CommandType::SetRpm => payload as u64,
         }
     }
 }
