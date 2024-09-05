@@ -44,19 +44,18 @@ impl Motor for VescCanMotor {
 }
 
 // Helpers
-fn merge_bytes_small(bytes: Vec<u8>) -> u32 {
+fn merge_bytes_small(bytes: Vec<u8>) -> Result<u32, String> {
     if bytes.len() > 4 {
-        // This should really be an error value instead of a panic, but I'm rushing things.
-        panic!("merge_bytes_small can only be called on series of bytes smaller than 4.");
+        return Err("merge_bytes_small can only be called on series of bytes smaller than 4");
     }
 
     let mut shift_val = 0;
     let mut out = 0_u32;
 
     for byte in bytes {
-        out |= (byte as u32) << shift_val; // Insert the next byte
-        shift_val += 8; // Make all future loops farther over
+        out |= (byte as u32) << shift_val;
+        shift_val += 8;
     }
 
-    out
+    Ok(out)
 }
