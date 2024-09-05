@@ -2,6 +2,6 @@ use vesc_translator::*;
 
 #[test]
 fn body_binary_test() {
-    let msg = Message::new(CommandType::Test, 0, 1.0);
-    assert_eq!(msg.to_body_binary(), 0x1000_u64.to_ne_bytes().to_vec());
+    let msg = Message::new(CommandType::SetDutyCycle, 0, 1.0);
+    assert_eq!(msg.to_body_binary(), 100000_u64.to_ne_bytes().to_vec());
 }

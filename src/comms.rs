@@ -10,6 +10,7 @@ pub trait Motor {
 
 	// All motor commands should just use send_message with different parameters
     fn set_rpm(&self, percent: f32) {self.send_message(CommandType::SetRpm, percent);}
+    fn set_duty_cycle(&self, duty_cycle: f32) {self.send_message(CommandType::SetDutyCycle, duty_cycle);}
 	
     // TODO add more commands and requests
 }
