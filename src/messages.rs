@@ -1,18 +1,21 @@
 // Traits
-pub trait VescSendable: VescSendableExtending + VescSendableValue {}
-impl<T> VescSendable for T where T: VescSendable + VescSendableExtending {}
-// Above technique from https://stackoverflow.com/questions/26983355/is-there-a-way-to-combine-multiple-traits-in-order-to-define-a-new-trait
-
-pub trait VescSendableValue {
+pub trait VescSendable {
     // TODO - convert to binary or binary CAN signal
     /// Converts the object to a binary representation so it can be sent easier.
-    fn to_header_binary(&self) -> Vec<u8>;
-    fn to_body_binary(&self) -> Vec<u8>;
-}
-
-pub trait VescSendableExtending {
     fn extend_header_binary(&self, out: &mut Vec<u8>);
     fn extend_body_binary(&self, out: &mut Vec<u8>);
+
+    fn to_header_binary(&self) -> Vec<u8> {
+        let mut out = vec![];
+        self.extend_header_binary(&mut out);
+        out
+    }
+
+    fn to_body_binary(&self) -> Vec<u8> {
+        let mut out = vec![];
+        self.extend_body_binary(&mut out);
+        out
+    }
 }
 
 pub trait CanBusSendable {
@@ -35,7 +38,7 @@ impl Message {
         };
     }
 }
-impl VescSendableExtending for Message {
+impl VescSendable for Message {
     fn extend_header_binary(&self, out: &mut Vec<u8>) {
         // target is stored in the lower byte, the rest of the space is used for the command
         out.extend(((self.target as u32) | ((self.command as u32) << 8)).to_ne_bytes());
@@ -54,19 +57,6 @@ impl<T: VescSendable> CanBusSendable for T {
         out.extend(self.to_header_binary());
         out.extend(self.to_body_binary());
         todo!(); // Needs to include other CAN information in proper format
-    }
-}
-
-impl<T: VescSendableExtending> VescSendableValue for T {
-    fn to_header_binary(&self) -> Vec<u8> {
-        let mut out = vec![];
-        self.extend_header_binary(&mut out);
-        out
-    }
-    fn to_body_binary(&self) -> Vec<u8> {
-        let mut out = vec![];
-        self.extend_body_binary(&mut out);
-        out
     }
 }
 
