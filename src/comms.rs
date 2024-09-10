@@ -35,11 +35,18 @@ impl Motor for VescCanMotor {
         // Create the message object
         let msg = Message::new(command, self.id, payload);
 
-        let id = ExtendedId::new(merge_bytes_small(msg.to_header_binary())).unwrap();
-        // Turn it into socketcan's message object
-        let frame: CanFrame = CanFrame::new(id, msg.to_body_binary().as_slice()).unwrap();
-        // Send it
-        _ = self.soc.write_frame_insist(&frame);
+        match merge_bytes_small(message.to_header_binary()) {
+            Ok(id) => {
+                let id = ExtendedId::new(id).unwrap();
+                // Turn it into socketcan's message object
+                let frame: canFrame = canFrame::new(id, msg.to_body_binary().as_slice()).unwrap();
+                // Send it
+                _ = self.soc.write_frame_insist(&frame);
+            }
+            Err(e) => {
+                panic!("error merging bytes: {}", e);
+            }
+        }
     }
 }
 
