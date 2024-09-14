@@ -53,7 +53,7 @@ impl Motor for VescCanMotor {
 // Helpers
 fn merge_bytes_small(bytes: Vec<u8>) -> Result<u32, String> {
     if bytes.len() > 4 {
-        return Err("merge_bytes_small can only be called on series of bytes smaller than 4");
+        return Err("merge_bytes_small can only be called on series of bytes smaller than 4".to_string());
     }
 
     let mut shift_val = 0;
