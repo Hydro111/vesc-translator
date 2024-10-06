@@ -4,30 +4,43 @@ use crate::messages::{CommandType, Message, VescSendable};
 
 /// The Motor trait is the basis for interactions with vesc-translator that use comms.
 /// A common, provided implementer for this trait is VescCanMotor.
+/// Motors represent a motor. This means that the user can send commands to the motor
+/// struct, which will then hopefully control the motor.
 pub trait Motor {
-    fn new(id: u8) -> Self;
+    pub fn new(id: u8) -> Self;
     fn send_message(&self, command: CommandType, payload: f32);
 
     // All motor commands should just use send_message with different parameters
-    fn set_rpm(&self, percent: f32) {
+    pub fn set_rpm(&self, percent: f32) {
         self.send_message(CommandType::SetRpm, percent);
     }
-    fn set_duty_cycle(&self, duty_cycle: f32) {
+    pub fn set_duty_cycle(&self, duty_cycle: f32) {
         self.send_message(CommandType::SetDutyCycle, duty_cycle);
     }
 
     // TODO add more commands and requests
 }
 
+/// A common implementation of the Motor trait, which uses the 
+/// VESC message generation of the messages package, and sends
+/// its messages over serial port CAN bus using socketcan.
 pub struct VescCanMotor {
     id: u8,
     soc: CanSocket,
 }
-impl Motor for VescCanMotor {
+pub impl VescCanMotor {
+    fn new_with_interface(id: u8, interface: &CanAddr) -> Self {
+        Self {
+            id,
+            soc: CanSocket::open_addr(interface).expect("CAN socket opening failed."),
+        }
+    }
+}
+pub impl Motor for VescCanMotor {
     fn new(id: u8) -> Self {
         Self {
             id,
-            soc: CanSocket::open_addr(&CanAddr::new(id as u32)).expect("CAN addressing failed."),
+            soc: CanSocket::open_addr(&CanAddr::new(0)).expect("CAN socket opening failed."),
         }
     }
 
