@@ -47,22 +47,32 @@ pub trait CanBusSendable {
 #[derive(Clone, Copy)]
 pub struct Message {
     command: CommandType,
-    target: u8,
+    target: Option<u8>,
     payload: f32,
 }
 impl Message {
     pub fn new(command: CommandType, target: u8, payload: f32) -> Self {
         return Self {
             command,
-            target,
+            target: Option::Some(target),
+            payload,
+        };
+    }
+
+    pub fn new_no_target(command: CommandType, payload: f32) -> Self {
+        return Self {
+            command,
+            target: Option::None,
             payload,
         };
     }
 }
 impl VescSendable for Message {
     fn extend_header_binary(&self, out: &mut Vec<u8>) {
+        // If no target id was specified, no header can be made, and this is invalid, so panic
+        let target_val = self.target.clone().expect("A message without a target id cannot generate a header.");
         // target is stored in the lower byte, the rest of the space is used for the command
-        out.extend(((self.target as u32) | ((self.command as u32) << 8)).to_be_bytes());
+        out.extend(((target_val as u32) | ((self.command as u32) << 8)).to_be_bytes());
     }
 
     fn extend_body_binary(&self, out: &mut Vec<u8>) {
