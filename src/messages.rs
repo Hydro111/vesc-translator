@@ -114,8 +114,18 @@ impl CommandType {
     /// Converts data to be transmitted into the form expected by VESC, applying a scaling.
     fn pack_payload_data(self, payload: f32) -> u32 {
         match self {
-            CommandType::SetDutyCycle => (payload * 100_000_f32) as u32,
-            CommandType::SetRpm => payload as u32,
+            CommandType::SetDutyCycle => scale_and_pack(payload, 100_000_f32),
+            CommandType::SetRpm => scale_and_pack(payload, 1_f32),
         }
     }
+}
+
+// Helpers
+/// Scales something by an number, and then converts it to a u32, first truncating
+/// but keeping sign, then converting by byte to a u32.
+/// 
+/// data - The data being packed.
+/// scale - The scale factor being used.
+fn scale_and_pack(data: f32, scale: f32) -> u32 {
+    (data * scale) as i32 as u32
 }
